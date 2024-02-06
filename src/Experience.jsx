@@ -1,28 +1,103 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { OrbitControls, TransformControls } from "@react-three/drei";
-import { Vector3 } from "three";
+import { DoubleSide, Matrix4, Quaternion, Vector3 } from "three";
+
+const obj = {
+  ball1: {
+    position: [4, 4, 0],
+    scale: [1, 1, 1],
+    color: "red",
+    args: [0.2]
+  },
+  ball2: {
+    position: [-4, 3, 0],
+    scale: [1, 1, 1],
+    color: "green",
+    args: [0.2]
+  },
+  ball3: {
+    position: [3, -1, 0],
+    scale: [1, 1, 1],
+    color: "gray",
+    args: [0.2]
+  },
+  ball4: {
+    position: [-2, 0, 0],
+    scale: [1, 1, 1],
+    color: "blue",
+    args: [0.2]
+  },
+  ball5: {
+    position: [-1, -3, 0],
+    scale: [1, 1, 1],
+    color: "orange",
+    args: [0.2]
+  },
+}
 
 const Experience = () => {
-  const [lastPlanePos, setLastPlanePos] = useState([0, 0, 0]);
+
+  const [transformMode, setTransformMode] = useState("translate");
+
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
+  const handleKeyDown = (event) => {
+    switch (event.key) {
+      case "w":
+      case "W":
+        setTransformMode("translate");
+        break;
+
+      case "e":
+      case "E":
+        setTransformMode("rotate");
+        break;
+
+      case "r":
+      case "R":
+        setTransformMode("scale");
+        break;
+    }
+  };
+
   const planeRef = useRef();
-  const ball1 = useRef();
-  const ball2 = useRef();
-  const ball3 = useRef();
-  const ball4 = useRef();
-  const ball5 = useRef();
+  const meshesRef = useRef();
+
+  // const handleChange = () => {
+  //   const displacement = new Vector3([0, 0, 0]);
+  //   const oldPos = new Vector3(lastPlanePos[0], lastPlanePos[1], lastPlanePos[2]);
+  //   displacement.subVectors(planeRef.current.position, oldPos);
+
+  //   ball1.current.position.add(displacement);
+  //   ball2.current.position.add(displacement);
+  //   ball3.current.position.add(displacement);
+  //   ball4.current.position.add(displacement);
+  //   ball5.current.position.add(displacement);
+
+  //   setLastPlanePos([planeRef.current.position.x, planeRef.current.position.y, planeRef.current.position.z]);
+  // }
 
   const handleChange = () => {
-    const displacement = new Vector3([0, 0, 0]);
-    const oldPos = new Vector3(lastPlanePos[0], lastPlanePos[1], lastPlanePos[2]);
-    displacement.subVectors(planeRef.current.position, oldPos);
 
-    ball1.current.position.add(displacement);
-    ball2.current.position.add(displacement);
-    ball3.current.position.add(displacement);
-    ball4.current.position.add(displacement);
-    ball5.current.position.add(displacement);
+    const position = new Vector3();
+    const scale = new Vector3();
+    const rotation = new Quaternion();
 
-    setLastPlanePos([planeRef.current.position.x, planeRef.current.position.y, planeRef.current.position.z]);
+    // Extracting plane Matrix to manipulate points 
+    // transformation with respect to plane's origin
+    // decompose:- This method basically extacts position, rotation, scale from Transformation Matrix
+    planeRef.current.matrix.decompose(position, rotation, scale);
+
+    meshesRef.current.position.set(position.x, position.y, position.z);
+    meshesRef.current.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
+    meshesRef.current.scale.set(scale.x, scale.y, scale.z);
   }
 
   return (
@@ -30,37 +105,39 @@ const Experience = () => {
       <OrbitControls makeDefault />
       <gridHelper name="grid" args={[55, 100, "black", "white"]} />
 
-      <mesh ref={planeRef} position={[0, 0.1, 0]} rotation-x={-Math.PI * 0.5} scale={10}>
-        <planeGeometry />
-        <meshBasicMaterial color="greenyellow" />
+      <mesh ref={planeRef} position={[0, 0.1, 0]}>
+        <planeGeometry args={[10, 10]} />
+        <meshBasicMaterial color="greenyellow" side={DoubleSide} />
       </mesh>
 
-      <TransformControls object={planeRef} mode="translate" onChange={() => handleChange()} />
+      <TransformControls object={planeRef} mode={transformMode} onChange={() => handleChange()} />
 
-      <mesh ref={ball1} position={[3, 0.29, 0]} scale={0.2}>
-        <sphereGeometry />
-        <meshBasicMaterial color="red" />
-      </mesh>
+      <object3D ref={meshesRef}>
+        <mesh position={obj.ball1.position}>
+          <sphereGeometry args={obj.ball1.args} />
+          <meshBasicMaterial color={obj.ball1.color} />
+        </mesh>
 
-      <mesh ref={ball2} position={[-3, 0.29, 0]} scale={0.2}>
-        <sphereGeometry />
-        <meshBasicMaterial color="green" />
-      </mesh>
+        <mesh position={obj.ball2.position}>
+          <sphereGeometry args={obj.ball2.args} />
+          <meshBasicMaterial color={obj.ball2.color} />
+        </mesh>
 
-      <mesh ref={ball3} position={[3, 0.29, -4]} scale={0.2}>
-        <sphereGeometry />
-        <meshBasicMaterial color="gray" />
-      </mesh>
+        <mesh position={obj.ball3.position}>
+          <sphereGeometry args={obj.ball3.args} />
+          <meshBasicMaterial color={obj.ball3.color} />
+        </mesh>
 
-      <mesh ref={ball4} position={[2, 0.29, -2]} scale={0.2}>
-        <sphereGeometry />
-        <meshBasicMaterial color="blue" />
-      </mesh>
+        <mesh position={obj.ball4.position}>
+          <sphereGeometry args={obj.ball4.args} />
+          <meshBasicMaterial color={obj.ball4.color} />
+        </mesh>
 
-      <mesh ref={ball5} position={[-3, 0.29, -4]} scale={0.2}>
-        <sphereGeometry />
-        <meshBasicMaterial color="orange" />
-      </mesh>
+        <mesh position={obj.ball5.position}>
+          <sphereGeometry args={obj.ball5.args} />
+          <meshBasicMaterial color={obj.ball5.color} />
+        </mesh>
+      </object3D>
     </>
   );
 };
